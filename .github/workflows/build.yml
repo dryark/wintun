@@ -9,7 +9,7 @@ on:
 
 jobs:
   build:
-    name: Build wintun.dll artifacts
+    name: Build drywintun.dll artifacts
     runs-on: windows-2022
 
     steps:
@@ -43,14 +43,14 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path out | Out-Null
-          Copy-Item "Release/amd64/wintun.dll" "out/wintun-amd64.dll"
-          Copy-Item "Release/arm64/wintun.dll" "out/wintun-arm64.dll"
-          Copy-Item "Release/x86/wintun.dll" "out/wintun-x86.dll"
+          Copy-Item "Release/amd64/wintun.dll" "out/drywintun-amd64.dll"
+          Copy-Item "Release/arm64/wintun.dll" "out/drywintun-arm64.dll"
+          Copy-Item "Release/x86/wintun.dll" "out/drywintun-x86.dll"
 
       - name: Generate SHA256SUMS
         shell: pwsh
         run: |
-          $items = @("wintun-amd64.dll", "wintun-arm64.dll", "wintun-x86.dll")
+          $items = @("drywintun-amd64.dll", "drywintun-arm64.dll", "drywintun-x86.dll")
           Remove-Item -ErrorAction SilentlyContinue out/SHA256SUMS.txt
           foreach ($item in $items) {
             $hash = (Get-FileHash "out/$item" -Algorithm SHA256).Hash.ToLower()

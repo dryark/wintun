@@ -20,11 +20,11 @@ This repository mirrors official Wintun source and publishes reproducible releas
 
 ## Release assets produced
 
-- `wintun-amd64.dll`
-- `wintun-arm64.dll`
-- `wintun-x86.dll`
+- `drywintun-amd64.dll`
+- `drywintun-arm64.dll`
+- `drywintun-x86.dll`
 - `SHA256SUMS.txt`
 
 ## Runner requirements
 
-The workflows are configured for a self-hosted Windows runner with Visual Studio Build Tools and WDK installed.
+The workflows run on GitHub-hosted `windows-2022` runners.
