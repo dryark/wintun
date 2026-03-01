@@ -1,0 +1,68 @@
+name: Release Wintun Artifacts
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to publish (example: v0.14.1-dryark.1)"
+        required: true
+        type: string
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and publish release assets
+    runs-on: [self-hosted, windows, x64, wintun]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Build Release DLL targets
+        run: msbuild wintun.proj /m /t:Dll /p:Configuration=Release
+
+      - name: Stage release assets
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path out | Out-Null
+          Copy-Item "Release/amd64/wintun.dll" "out/wintun-amd64.dll"
+          Copy-Item "Release/arm64/wintun.dll" "out/wintun-arm64.dll"
+          Copy-Item "Release/x86/wintun.dll" "out/wintun-x86.dll"
+
+      - name: Generate SHA256SUMS
+        shell: pwsh
+        run: |
+          $items = @("wintun-amd64.dll", "wintun-arm64.dll", "wintun-x86.dll")
+          Remove-Item -ErrorAction SilentlyContinue out/SHA256SUMS.txt
+          foreach ($item in $items) {
+            $hash = (Get-FileHash "out/$item" -Algorithm SHA256).Hash.ToLower()
+            "$hash  $item" | Out-File -FilePath out/SHA256SUMS.txt -Append -Encoding ascii
+          }
+
+      - name: Resolve release tag
+        id: release_tag
+        shell: pwsh
+        run: |
+          if ("${{ github.event_name }}" -eq "workflow_dispatch") {
+            "value=${{ inputs.tag }}" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          } else {
+            $tag = "${{ github.ref_name }}"
+            "value=$tag" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          }
+
+      - name: Publish GitHub release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.release_tag.outputs.value }}
+          files: |
+            out/wintun-amd64.dll
+            out/wintun-arm64.dll
+            out/wintun-x86.dll
+            out/SHA256SUMS.txt
