@@ -7,7 +7,7 @@ Signature = "$Windows NT$"
 Class = Net
 ClassGUID = {4D36E972-E325-11CE-BFC1-08002BE10318}
 Provider = %Wintun.CompanyName%
-CatalogFile.NT = wintun.cat
+CatalogFile.NT = drywintun.cat
 PnpLockdown = 1
 
 [Manufacturer]
@@ -17,14 +17,14 @@ PnpLockdown = 1
 1 = %Wintun.DiskDesc%, "", ,
 
 [SourceDisksFiles]
-wintun.sys = 1
+drywintun.sys = 1
 
 [DestinationDirs]
 DefaultDestDir = 12
 Wintun.CopyFiles.Sys = 12
 
 [Wintun.CopyFiles.Sys]
-wintun.sys, , , 0x00004002 ; COPYFLG_IN_USE_RENAME | COPYFLG_NOSKIP
+drywintun.sys, , , 0x00004002 ; COPYFLG_IN_USE_RENAME | COPYFLG_NOSKIP
 
 [Wintun.NT$ARCH$]
 %Wintun.DeviceDesc% = Wintun.Install, Wintun
@@ -43,10 +43,10 @@ EnableDhcp = 0 ; Disable DHCP
 DeviceVendorWebsite,,,,"https://www.wintun.net/"
 
 [Wintun.Install.Services]
-AddService = wintun, 2, Wintun.Service, Wintun.EventLog ; 2=SPSVCINST_ASSOCSERVICE
+AddService = drywintun, 2, Wintun.Service, Wintun.EventLog ; 2=SPSVCINST_ASSOCSERVICE
 
 [Wintun.Ndi]
-HKR, Ndi, Service, 0, wintun
+HKR, Ndi, Service, 0, drywintun
 HKR, Ndi\Interfaces, UpperRange, , "ndis5"
 HKR, Ndi\Interfaces, LowerRange, , "nolower"
 
@@ -56,14 +56,14 @@ Description = %Wintun.DeviceDesc%
 ServiceType = 1 ; SERVICE_KERNEL_DRIVER
 StartType = 3 ; SERVICE_DEMAND_START
 ErrorControl = 1 ; SERVICE_ERROR_NORMAL
-ServiceBinary = %12%\wintun.sys
+ServiceBinary = %12%\drywintun.sys
 
 [Wintun.EventLog]
-HKR, , EventMessageFile, 0x00020000, "%11%\IoLogMsg.dll;%12%\wintun.sys"
+HKR, , EventMessageFile, 0x00020000, "%11%\IoLogMsg.dll;%12%\drywintun.sys"
 HKR, , TypesSupported, 0x00010001, 7
 
 [Strings]
-Wintun.Name = "Wintun"
-Wintun.DiskDesc = "Wintun Driver Install Disk"
-Wintun.DeviceDesc = "Wintun Userspace Tunnel"
+Wintun.Name = "DryWintun"
+Wintun.DiskDesc = "DryWintun Driver Install Disk"
+Wintun.DeviceDesc = "DryWintun Userspace Tunnel"
 Wintun.CompanyName = "WireGuard LLC"

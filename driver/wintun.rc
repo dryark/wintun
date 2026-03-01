@@ -25,9 +25,9 @@ BEGIN
       VALUE "CompanyName", "WireGuard LLC"
       VALUE "FileDescription", "Wintun Driver"
       VALUE "FileVersion", EXPAND(WINTUN_VERSION)
-      VALUE "InternalName", "wintun.sys"
+      VALUE "InternalName", "drywintun.sys"
       VALUE "LegalCopyright", "Copyright \xa9 2018-2021 WireGuard LLC. All Rights Reserved."
-      VALUE "OriginalFilename", "wintun.sys"
+      VALUE "OriginalFilename", "drywintun.sys"
       VALUE "ProductName", "Wintun Driver"
       VALUE "ProductVersion", EXPAND(WINTUN_VERSION)
       VALUE "Comments", "https://www.wintun.net/"

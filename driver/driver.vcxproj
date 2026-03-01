@@ -12,7 +12,7 @@
   </PropertyGroup>
   <Import Project="..\wintun.props" />
   <PropertyGroup>
-    <TargetName>wintun</TargetName>
+    <TargetName>drywintun</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>

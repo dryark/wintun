@@ -203,7 +203,7 @@ MaybeGetRunningDriverVersion(BOOL ReturnOneIfRunningInsteadOfVersion)
     for (ULONG i = Modules->NumberOfModules; i-- > 0;)
     {
         LPCSTR NtPath = (LPCSTR)Modules->Modules[i].FullPathName;
-        if (!_stricmp(&NtPath[Modules->Modules[i].OffsetToFileName], "wintun.sys"))
+        if (!_stricmp(&NtPath[Modules->Modules[i].OffsetToFileName], "drywintun.sys"))
         {
             if (ReturnOneIfRunningInsteadOfVersion)
             {
@@ -380,9 +380,9 @@ DriverInstall(HDEVINFO *DevInfoExistingAdaptersForCleanup, SP_DEVINFO_DATA_LIST 
     WCHAR CatPath[MAX_PATH] = { 0 };
     WCHAR SysPath[MAX_PATH] = { 0 };
     WCHAR InfPath[MAX_PATH] = { 0 };
-    if (!PathCombineW(CatPath, RandomTempSubDirectory, L"wintun.cat") ||
-        !PathCombineW(SysPath, RandomTempSubDirectory, L"wintun.sys") ||
-        !PathCombineW(InfPath, RandomTempSubDirectory, L"wintun.inf"))
+    if (!PathCombineW(CatPath, RandomTempSubDirectory, L"drywintun.cat") ||
+        !PathCombineW(SysPath, RandomTempSubDirectory, L"drywintun.sys") ||
+        !PathCombineW(InfPath, RandomTempSubDirectory, L"drywintun.inf"))
     {
         LastError = ERROR_BUFFER_OVERFLOW;
         goto cleanupDirectory;
@@ -391,21 +391,21 @@ DriverInstall(HDEVINFO *DevInfoExistingAdaptersForCleanup, SP_DEVINFO_DATA_LIST 
     WCHAR *CatSource, *SysSource, *InfSource;
     if (NativeMachine == IMAGE_FILE_PROCESS)
     {
-        CatSource = L"wintun.cat";
-        SysSource = L"wintun.sys";
-        InfSource = L"wintun.inf";
+        CatSource = L"drywintun.cat";
+        SysSource = L"drywintun.sys";
+        InfSource = L"drywintun.inf";
     }
     else if (NativeMachine == IMAGE_FILE_MACHINE_AMD64)
     {
-        CatSource = L"wintun-amd64.cat";
-        SysSource = L"wintun-amd64.sys";
-        InfSource = L"wintun-amd64.inf";
+        CatSource = L"drywintun-amd64.cat";
+        SysSource = L"drywintun-amd64.sys";
+        InfSource = L"drywintun-amd64.inf";
     }
     else if (NativeMachine == IMAGE_FILE_MACHINE_ARM64)
     {
-        CatSource = L"wintun-arm64.cat";
-        SysSource = L"wintun-arm64.sys";
-        InfSource = L"wintun-arm64.inf";
+        CatSource = L"drywintun-arm64.cat";
+        SysSource = L"drywintun-arm64.sys";
+        InfSource = L"drywintun-arm64.inf";
     }
     else
     {
