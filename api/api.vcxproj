@@ -79,8 +79,8 @@
   <PropertyGroup>
     <CleanDependsOn>CleanInfVersion;CleanNci;$(CleanDependsOn)</CleanDependsOn>
   </PropertyGroup>
-  <Target Name="BuildInfVersion" BeforeTargets="ClCompile" Inputs="$(OutDir)driver\wintun.inf" Outputs="$(IntDir)wintun-inf.h">
-    <Exec Command="cscript.exe /nologo &quot;extract-driverver.js&quot; &lt; &quot;$(OutDir)driver\wintun.inf&quot; &gt; &quot;$(IntDir)wintun-inf.h&quot;" />
+  <Target Name="BuildInfVersion" BeforeTargets="ClCompile" Inputs="$(ProjectDir)..\driver\wintun.inf" Outputs="$(IntDir)wintun-inf.h">
+    <Exec Command="cscript.exe /nologo &quot;extract-driverver.js&quot; &lt; &quot;$(ProjectDir)..\driver\wintun.inf&quot; &gt; &quot;$(IntDir)wintun-inf.h&quot;" />
   </Target>
   <Target Name="CleanInfVersion">
     <Delete Files="$(IntDir)wintun-inf.h" />
