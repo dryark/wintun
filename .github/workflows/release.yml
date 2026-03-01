@@ -76,7 +76,7 @@ jobs:
         shell: pwsh
         run: |
           python -m pip install --disable-pip-version-check pefile
-          python - <<'PY'
+          @'
           from pathlib import Path
           import pefile
 
@@ -127,7 +127,8 @@ jobs:
               )
 
           (out_dir / "UPSTREAM_SYS_STATUS.txt").write_text("\\n".join(lines) + "\\n", encoding="utf-8")
-          PY
+          '@ | Set-Content -Path extract_embedded_sys.py -Encoding utf8
+          python extract_embedded_sys.py
 
       - name: Stage release assets
         shell: pwsh
