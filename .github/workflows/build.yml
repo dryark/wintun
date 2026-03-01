@@ -19,7 +19,7 @@ jobs:
         uses: microsoft/setup-msbuild@v2
 
       - name: Build Release DLL targets
-        run: msbuild wintun.proj /m /t:Dll /p:Configuration=Release
+        run: msbuild wintun.proj /m /t:Dll /p:Configuration=Release /p:WindowsTargetPlatformVersion=10.0.22621.0
 
       - name: Stage release assets
         shell: pwsh
