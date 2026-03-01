@@ -10,7 +10,7 @@ on:
 jobs:
   build:
     name: Build wintun.dll artifacts
-    runs-on: [self-hosted, windows, x64, wintun]
+    runs-on: windows-latest
 
     steps:
       - uses: actions/checkout@v4

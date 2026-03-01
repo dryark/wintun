@@ -17,7 +17,7 @@ permissions:
 jobs:
   release:
     name: Build and publish release assets
-    runs-on: [self-hosted, windows, x64, wintun]
+    runs-on: windows-latest
 
     steps:
       - uses: actions/checkout@v4
