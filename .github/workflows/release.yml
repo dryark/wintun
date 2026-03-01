@@ -44,7 +44,7 @@ jobs:
 
       - name: Build Release DLL targets
         shell: pwsh
-        run: msbuild wintun.proj /m /t:Dll /p:Configuration=Release /p:WindowsTargetPlatformVersion=$env:WINTUN_SDK_VERSION
+        run: msbuild wintun.proj /m /t:Driver,Dll /p:Configuration=Release /p:WindowsTargetPlatformVersion=$env:WINTUN_SDK_VERSION
 
       - name: Stage release assets
         shell: pwsh
