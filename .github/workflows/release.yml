@@ -146,19 +146,33 @@ jobs:
           Copy-Item "Release/arm64/wintun.dll" "out/drywintun-arm64.dll"
           Copy-Item "Release/x86/wintun.dll" "out/drywintun-x86.dll"
 
-      - name: Generate SHA256SUMS
+      - name: Build per-architecture bundle zips
         shell: pwsh
         run: |
-          $items = @("drywintun-amd64.dll", "drywintun-arm64.dll", "drywintun-x86.dll")
-          $items += (Get-ChildItem -Path out -Filter "wintun-*.zip" | ForEach-Object { $_.Name })
-          $items += (Get-ChildItem -Path out -Filter "DRYWINTUN-*.sys" | ForEach-Object { $_.Name })
-          $items += (Get-ChildItem -Path out -Filter "DRYWINTUN-*.inf" | ForEach-Object { $_.Name })
-          $items += (Get-ChildItem -Path out -Filter "DRYWINTUN-*.cat" | ForEach-Object { $_.Name })
-          $items += (Get-ChildItem -Path out -Filter "UPSTREAM_SYS_STATUS.txt" | ForEach-Object { $_.Name })
-          Remove-Item -ErrorAction SilentlyContinue out/SHA256SUMS.txt
-          foreach ($item in $items) {
-            $hash = (Get-FileHash "out/$item" -Algorithm SHA256).Hash.ToLower()
-            "$hash  $item" | Out-File -FilePath out/SHA256SUMS.txt -Append -Encoding ascii
+          $upstream = Get-ChildItem -Path out -Filter "wintun-*.zip" | Select-Object -First 1
+          if (-not $upstream) {
+            throw "upstream wintun-*.zip not found in out/"
+          }
+          if ($upstream.BaseName -notmatch '^wintun-(?<ver>\d+\.\d+\.\d+)$') {
+            throw "unexpected upstream zip name: $($upstream.Name)"
+          }
+          $ver = $Matches['ver']
+
+          $bundles = @(
+            @{ Label = "x64"; Dll = "drywintun-amd64.dll"; Sys = "DRYWINTUN-AMD64.sys"; Inf = "DRYWINTUN-AMD64.inf"; Cat = "DRYWINTUN-AMD64.cat" },
+            @{ Label = "arm64"; Dll = "drywintun-arm64.dll"; Sys = "DRYWINTUN-ARM64.sys"; Inf = "DRYWINTUN-ARM64.inf"; Cat = "DRYWINTUN-ARM64.cat" },
+            @{ Label = "x86"; Dll = "drywintun-x86.dll"; Sys = "DRYWINTUN-X86.sys"; Inf = "DRYWINTUN-X86.inf"; Cat = "DRYWINTUN-X86.cat" }
+          )
+
+          foreach ($bundle in $bundles) {
+            $stage = "out/stage-$($bundle.Label)"
+            New-Item -ItemType Directory -Force -Path $stage | Out-Null
+            Copy-Item "out/$($bundle.Dll)" "$stage/$($bundle.Dll)"
+            Copy-Item "out/$($bundle.Sys)" "$stage/$($bundle.Sys)"
+            Copy-Item "out/$($bundle.Inf)" "$stage/$($bundle.Inf)"
+            Copy-Item "out/$($bundle.Cat)" "$stage/$($bundle.Cat)"
+            $zipName = "drywintun-$ver-$($bundle.Label).zip"
+            Compress-Archive -Path "$stage/*" -DestinationPath "out/$zipName" -Force
           }
 
       - name: Publish GitHub release assets
@@ -166,12 +180,8 @@ jobs:
         with:
           tag_name: ${{ steps.release_tag.outputs.value }}
           files: |
-            out/drywintun-amd64.dll
-            out/drywintun-arm64.dll
-            out/drywintun-x86.dll
+            out/drywintun-*-x64.zip
+            out/drywintun-*-arm64.zip
+            out/drywintun-*-x86.zip
             out/wintun-*.zip
-            out/DRYWINTUN-*.sys
-            out/DRYWINTUN-*.inf
-            out/DRYWINTUN-*.cat
             out/UPSTREAM_SYS_STATUS.txt
-            out/SHA256SUMS.txt
