@@ -8,9 +8,13 @@
 
 #pragma code_page(1252)
 
+#if defined(WINTUN_EMBED_DRIVER)
 wintun.cat RCDATA "driver\\wintun.cat"
 wintun.inf RCDATA "driver\\wintun.inf"
 wintun.sys RCDATA "driver\\wintun.sys"
+#else
+#    pragma message("Current-arch driver package not embedded in this build")
+#endif
 
 #if defined(WANT_AMD64_WOW64)
 #    if defined(BUILT_AMD64_WOW64)
