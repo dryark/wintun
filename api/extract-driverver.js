@@ -18,7 +18,7 @@ while (!WScript.StdIn.AtEndOfStream) {
 	break;
 }
 if (!found) {
-	var now = Date.now().toString();
+	var now = (new Date()).getTime().toString();
 	WScript.Echo("#define WINTUN_INF_FILETIME { (DWORD)((" + now + "0000ULL + 116444736000000000ULL) & 0xffffffffU), (DWORD)((" + now + "0000ULL + 116444736000000000ULL) >> 32) }")
 	WScript.Echo("#define WINTUN_INF_VERSION (((DWORDLONG)WINTUN_VERSION_MAJ << 48) | ((DWORDLONG)WINTUN_VERSION_MIN << 32) | ((DWORDLONG)WINTUN_VERSION_REL << 16))")
 }
