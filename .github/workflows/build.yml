@@ -18,8 +18,26 @@ jobs:
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
 
+      - name: Resolve Windows SDK version
+        shell: pwsh
+        run: |
+          $sdkRoot = Join-Path ${env:ProgramFiles(x86)} "Windows Kits\10\Include"
+          $versions = Get-ChildItem -Path $sdkRoot -Directory |
+            Where-Object { $_.Name -match '^\d+\.\d+\.\d+\.\d+$' } |
+            Sort-Object Name -Descending
+          if (-not $versions) {
+            throw "No Windows 10 SDK versions found under $sdkRoot"
+          }
+          $preferred = $versions | Where-Object { $_.Name -notlike '10.0.26100.*' } | Select-Object -First 1
+          if (-not $preferred) {
+            $preferred = $versions | Select-Object -First 1
+          }
+          "WINTUN_SDK_VERSION=$($preferred.Name)" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          Write-Host "Using WindowsTargetPlatformVersion=$($preferred.Name)"
+
       - name: Build Release DLL targets
-        run: msbuild wintun.proj /m /t:Dll /p:Configuration=Release /p:WindowsTargetPlatformVersion=10.0.22621.0
+        shell: pwsh
+        run: msbuild wintun.proj /m /t:Dll /p:Configuration=Release /p:WindowsTargetPlatformVersion=$env:WINTUN_SDK_VERSION
 
       - name: Stage release assets
         shell: pwsh
