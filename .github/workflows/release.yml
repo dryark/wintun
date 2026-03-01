@@ -72,17 +72,62 @@ jobs:
           Write-Host "Fetching upstream package: $upstreamUrl"
           Invoke-WebRequest -Uri $upstreamUrl -OutFile "out/$upstreamZipName"
           Expand-Archive -Path "out/$upstreamZipName" -DestinationPath $upstreamDir -Force
-          $sysFiles = Get-ChildItem -Path $upstreamDir -Recurse -Filter *.sys
-          if ($sysFiles.Count -eq 0) {
-            "No .sys files present in wintun.net package $upstreamZipName" |
-              Out-File -FilePath out/UPSTREAM_SYS_STATUS.txt -Encoding utf8
-          } else {
-            foreach ($sys in $sysFiles) {
-              Copy-Item $sys.FullName "out/$($sys.Name)"
-            }
-            "Extracted $($sysFiles.Count) .sys file(s) from $upstreamZipName" |
-              Out-File -FilePath out/UPSTREAM_SYS_STATUS.txt -Encoding utf8
-          }
+      - name: Extract and rename embedded SYS payloads
+        shell: pwsh
+        run: |
+          python -m pip install --disable-pip-version-check pefile
+          python - <<'PY'
+          from pathlib import Path
+          import pefile
+
+          out_dir = Path("out")
+          upstream_root = next(p for p in out_dir.iterdir() if p.is_dir() and p.name.startswith("upstream-wintun-"))
+          bin_dir = upstream_root / "wintun" / "bin"
+
+          targets = [
+              ("amd64", "DRYWINTUN-AMD64.sys"),
+              ("arm64", "DRYWINTUN-ARM64.sys"),
+              ("x86", "DRYWINTUN-X86.sys"),
+          ]
+
+          def extract_wintun_sys(dll_path: Path) -> bytes:
+              pe = pefile.PE(str(dll_path), fast_load=False)
+              if not hasattr(pe, "DIRECTORY_ENTRY_RESOURCE"):
+                  raise RuntimeError(f"no resources in {dll_path}")
+              for type_entry in pe.DIRECTORY_ENTRY_RESOURCE.entries:
+                  if type_entry.id != pefile.RESOURCE_TYPE["RT_RCDATA"]:
+                      continue
+                  for name_entry in type_entry.directory.entries:
+                      name = str(name_entry.name) if name_entry.name is not None else ""
+                      if name.upper() != "WINTUN.SYS":
+                          continue
+                      for lang_entry in name_entry.directory.entries:
+                          data_entry = lang_entry.data.struct
+                          blob = pe.get_memory_mapped_image()[
+                              data_entry.OffsetToData : data_entry.OffsetToData + data_entry.Size
+                          ]
+                          if blob[:2] == b"MZ":
+                              return blob
+              raise RuntimeError(f"WINTUN.SYS not found in {dll_path}")
+
+          lines = []
+          for arch, out_name in targets:
+              dll_path = bin_dir / arch / "wintun.dll"
+              blob = extract_wintun_sys(dll_path)
+              out_path = out_dir / out_name
+              out_path.write_bytes(blob)
+
+              pe = pefile.PE(data=blob, fast_load=False)
+              sec = pe.OPTIONAL_HEADER.DATA_DIRECTORY[
+                  pefile.DIRECTORY_ENTRY["IMAGE_DIRECTORY_ENTRY_SECURITY"]
+              ]
+              signed = sec.Size > 0
+              lines.append(
+                  f"{out_name}: source={dll_path.as_posix()} size={len(blob)} cert_table_size={sec.Size} signed={signed}"
+              )
+
+          (out_dir / "UPSTREAM_SYS_STATUS.txt").write_text("\\n".join(lines) + "\\n", encoding="utf-8")
+          PY
 
       - name: Stage release assets
         shell: pwsh
@@ -97,7 +142,7 @@ jobs:
         run: |
           $items = @("drywintun-amd64.dll", "drywintun-arm64.dll", "drywintun-x86.dll")
           $items += (Get-ChildItem -Path out -Filter "wintun-*.zip" | ForEach-Object { $_.Name })
-          $items += (Get-ChildItem -Path out -Filter "*.sys" | ForEach-Object { $_.Name })
+          $items += (Get-ChildItem -Path out -Filter "DRYWINTUN-*.sys" | ForEach-Object { $_.Name })
           $items += (Get-ChildItem -Path out -Filter "UPSTREAM_SYS_STATUS.txt" | ForEach-Object { $_.Name })
           Remove-Item -ErrorAction SilentlyContinue out/SHA256SUMS.txt
           foreach ($item in $items) {
@@ -114,6 +159,6 @@ jobs:
             out/drywintun-arm64.dll
             out/drywintun-x86.dll
             out/wintun-*.zip
-            out/*.sys
+            out/DRYWINTUN-*.sys
             out/UPSTREAM_SYS_STATUS.txt
             out/SHA256SUMS.txt
