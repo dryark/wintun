@@ -85,12 +85,12 @@ jobs:
           bin_dir = upstream_root / "wintun" / "bin"
 
           targets = [
-              ("amd64", "DRYWINTUN-AMD64.sys"),
-              ("arm64", "DRYWINTUN-ARM64.sys"),
-              ("x86", "DRYWINTUN-X86.sys"),
+              ("amd64", "AMD64"),
+              ("arm64", "ARM64"),
+              ("x86", "X86"),
           ]
 
-          def extract_wintun_sys(dll_path: Path) -> bytes:
+          def extract_named_resource(dll_path: Path, wanted_name: str) -> bytes:
               pe = pefile.PE(str(dll_path), fast_load=False)
               if not hasattr(pe, "DIRECTORY_ENTRY_RESOURCE"):
                   raise RuntimeError(f"no resources in {dll_path}")
@@ -99,32 +99,40 @@ jobs:
                       continue
                   for name_entry in type_entry.directory.entries:
                       name = str(name_entry.name) if name_entry.name is not None else ""
-                      if name.upper() != "WINTUN.SYS":
+                      if name.upper() != wanted_name.upper():
                           continue
                       for lang_entry in name_entry.directory.entries:
                           data_entry = lang_entry.data.struct
                           blob = pe.get_memory_mapped_image()[
                               data_entry.OffsetToData : data_entry.OffsetToData + data_entry.Size
                           ]
-                          if blob[:2] == b"MZ":
+                          if blob:
                               return blob
-              raise RuntimeError(f"WINTUN.SYS not found in {dll_path}")
+              raise RuntimeError(f"{wanted_name} not found in {dll_path}")
 
           lines = []
-          for arch, out_name in targets:
+          for arch, label in targets:
               dll_path = bin_dir / arch / "wintun.dll"
-              blob = extract_wintun_sys(dll_path)
-              out_path = out_dir / out_name
-              out_path.write_bytes(blob)
+              sys_blob = extract_named_resource(dll_path, "WINTUN.SYS")
+              inf_blob = extract_named_resource(dll_path, "WINTUN.INF")
+              cat_blob = extract_named_resource(dll_path, "WINTUN.CAT")
 
-              pe = pefile.PE(data=blob, fast_load=False)
+              sys_name = f"DRYWINTUN-{label}.sys"
+              inf_name = f"DRYWINTUN-{label}.inf"
+              cat_name = f"DRYWINTUN-{label}.cat"
+              (out_dir / sys_name).write_bytes(sys_blob)
+              (out_dir / inf_name).write_bytes(inf_blob)
+              (out_dir / cat_name).write_bytes(cat_blob)
+
+              pe = pefile.PE(data=sys_blob, fast_load=False)
               sec = pe.OPTIONAL_HEADER.DATA_DIRECTORY[
                   pefile.DIRECTORY_ENTRY["IMAGE_DIRECTORY_ENTRY_SECURITY"]
               ]
-              signed = sec.Size > 0
               lines.append(
-                  f"{out_name}: source={dll_path.as_posix()} size={len(blob)} cert_table_size={sec.Size} signed={signed}"
+                  f"{sys_name}: source={dll_path.as_posix()} size={len(sys_blob)} cert_table_size={sec.Size} signed={(sec.Size > 0)}"
               )
+              lines.append(f"{inf_name}: source={dll_path.as_posix()} size={len(inf_blob)}")
+              lines.append(f"{cat_name}: source={dll_path.as_posix()} size={len(cat_blob)}")
 
           (out_dir / "UPSTREAM_SYS_STATUS.txt").write_text("\\n".join(lines) + "\\n", encoding="utf-8")
           '@ | Set-Content -Path extract_embedded_sys.py -Encoding utf8
@@ -144,6 +152,8 @@ jobs:
           $items = @("drywintun-amd64.dll", "drywintun-arm64.dll", "drywintun-x86.dll")
           $items += (Get-ChildItem -Path out -Filter "wintun-*.zip" | ForEach-Object { $_.Name })
           $items += (Get-ChildItem -Path out -Filter "DRYWINTUN-*.sys" | ForEach-Object { $_.Name })
+          $items += (Get-ChildItem -Path out -Filter "DRYWINTUN-*.inf" | ForEach-Object { $_.Name })
+          $items += (Get-ChildItem -Path out -Filter "DRYWINTUN-*.cat" | ForEach-Object { $_.Name })
           $items += (Get-ChildItem -Path out -Filter "UPSTREAM_SYS_STATUS.txt" | ForEach-Object { $_.Name })
           Remove-Item -ErrorAction SilentlyContinue out/SHA256SUMS.txt
           foreach ($item in $items) {
@@ -161,5 +171,7 @@ jobs:
             out/drywintun-x86.dll
             out/wintun-*.zip
             out/DRYWINTUN-*.sys
+            out/DRYWINTUN-*.inf
+            out/DRYWINTUN-*.cat
             out/UPSTREAM_SYS_STATUS.txt
             out/SHA256SUMS.txt

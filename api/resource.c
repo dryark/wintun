@@ -50,7 +50,38 @@ ResourceCopyToFile(LPCWSTR DestinationPath, LPCWSTR ResourceName)
     const VOID *LockedResource = ResourceGetAddress(ResourceName, &SizeResource);
     if (!LockedResource)
     {
+        DWORD LastError = GetLastError();
+        if (LastError == ERROR_RESOURCE_NAME_NOT_FOUND || LastError == ERROR_RESOURCE_TYPE_NOT_FOUND ||
+            LastError == ERROR_RESOURCE_DATA_NOT_FOUND)
+        {
+            WCHAR ModulePath[MAX_PATH];
+            if (!GetModuleFileNameW(ResourceModule, ModulePath, _countof(ModulePath)))
+            {
+                LOG_LAST_ERROR(L"Failed to resolve module path for resource fallback %s", ResourceName);
+                return FALSE;
+            }
+            if (!PathRemoveFileSpecW(ModulePath))
+            {
+                LOG(WINTUN_LOG_ERR, L"Failed to get module directory for resource fallback %s", ResourceName);
+                SetLastError(ERROR_INVALID_DATA);
+                return FALSE;
+            }
+            WCHAR SidecarPath[MAX_PATH];
+            if (!PathCombineW(SidecarPath, ModulePath, ResourceName))
+            {
+                LOG(WINTUN_LOG_ERR, L"Failed to build sidecar path for %s", ResourceName);
+                SetLastError(ERROR_BUFFER_OVERFLOW);
+                return FALSE;
+            }
+            if (CopyFileW(SidecarPath, DestinationPath, TRUE))
+            {
+                return TRUE;
+            }
+            LOG_LAST_ERROR(L"Failed to copy sidecar %s", SidecarPath);
+            return FALSE;
+        }
         LOG(WINTUN_LOG_ERR, L"Failed to locate resource %s", ResourceName);
+        SetLastError(LastError);
         return FALSE;
     }
     HANDLE DestinationHandle = CreateFileW(

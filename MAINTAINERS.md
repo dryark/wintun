@@ -28,6 +28,12 @@ This repository mirrors official Wintun source and publishes reproducible releas
 - `DRYWINTUN-AMD64.sys`
 - `DRYWINTUN-ARM64.sys`
 - `DRYWINTUN-X86.sys`
+- `DRYWINTUN-AMD64.inf`
+- `DRYWINTUN-ARM64.inf`
+- `DRYWINTUN-X86.inf`
+- `DRYWINTUN-AMD64.cat`
+- `DRYWINTUN-ARM64.cat`
+- `DRYWINTUN-X86.cat`
 - `SHA256SUMS.txt`
 
 ## Runner requirements
