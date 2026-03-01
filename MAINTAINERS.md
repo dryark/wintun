@@ -24,7 +24,6 @@ This repository mirrors official Wintun source and publishes reproducible releas
 - `drywintun-<upstream-version>-arm64.zip`
 - `drywintun-<upstream-version>-x86.zip`
 - `wintun-<upstream-version>.zip` (fetched from wintun.net)
-- `UPSTREAM_SYS_STATUS.txt` (includes extracted SYS signature table status)
 
 ## Runner requirements
 

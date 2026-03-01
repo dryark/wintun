@@ -184,4 +184,3 @@ jobs:
             out/drywintun-*-arm64.zip
             out/drywintun-*-x86.zip
             out/wintun-*.zip
-            out/UPSTREAM_SYS_STATUS.txt
