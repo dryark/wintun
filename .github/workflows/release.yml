@@ -46,6 +46,44 @@ jobs:
         shell: pwsh
         run: msbuild wintun.proj /m /t:Dll /p:Configuration=Release /p:WindowsTargetPlatformVersion=$env:WINTUN_SDK_VERSION
 
+      - name: Resolve release tag
+        id: release_tag
+        shell: pwsh
+        run: |
+          if ("${{ github.event_name }}" -eq "workflow_dispatch") {
+            "value=${{ inputs.tag }}" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          } else {
+            $tag = "${{ github.ref_name }}"
+            "value=$tag" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          }
+
+      - name: Fetch matching wintun.net package
+        shell: pwsh
+        run: |
+          $tag = "${{ steps.release_tag.outputs.value }}"
+          if ($tag -notmatch '^v(?<ver>\d+\.\d+\.\d+)-dryark\.\d+$') {
+            throw "Tag '$tag' must match v<major>.<minor>.<patch>-dryark.<n>"
+          }
+          $upstreamVer = $Matches['ver']
+          $upstreamZipName = "wintun-$upstreamVer.zip"
+          $upstreamUrl = "https://www.wintun.net/builds/$upstreamZipName"
+          $upstreamDir = "out/upstream-wintun-$upstreamVer"
+          New-Item -ItemType Directory -Force -Path "out" | Out-Null
+          Write-Host "Fetching upstream package: $upstreamUrl"
+          Invoke-WebRequest -Uri $upstreamUrl -OutFile "out/$upstreamZipName"
+          Expand-Archive -Path "out/$upstreamZipName" -DestinationPath $upstreamDir -Force
+          $sysFiles = Get-ChildItem -Path $upstreamDir -Recurse -Filter *.sys
+          if ($sysFiles.Count -eq 0) {
+            "No .sys files present in wintun.net package $upstreamZipName" |
+              Out-File -FilePath out/UPSTREAM_SYS_STATUS.txt -Encoding utf8
+          } else {
+            foreach ($sys in $sysFiles) {
+              Copy-Item $sys.FullName "out/$($sys.Name)"
+            }
+            "Extracted $($sysFiles.Count) .sys file(s) from $upstreamZipName" |
+              Out-File -FilePath out/UPSTREAM_SYS_STATUS.txt -Encoding utf8
+          }
+
       - name: Stage release assets
         shell: pwsh
         run: |
@@ -58,21 +96,13 @@ jobs:
         shell: pwsh
         run: |
           $items = @("drywintun-amd64.dll", "drywintun-arm64.dll", "drywintun-x86.dll")
+          $items += (Get-ChildItem -Path out -Filter "wintun-*.zip" | ForEach-Object { $_.Name })
+          $items += (Get-ChildItem -Path out -Filter "*.sys" | ForEach-Object { $_.Name })
+          $items += (Get-ChildItem -Path out -Filter "UPSTREAM_SYS_STATUS.txt" | ForEach-Object { $_.Name })
           Remove-Item -ErrorAction SilentlyContinue out/SHA256SUMS.txt
           foreach ($item in $items) {
             $hash = (Get-FileHash "out/$item" -Algorithm SHA256).Hash.ToLower()
             "$hash  $item" | Out-File -FilePath out/SHA256SUMS.txt -Append -Encoding ascii
-          }
-
-      - name: Resolve release tag
-        id: release_tag
-        shell: pwsh
-        run: |
-          if ("${{ github.event_name }}" -eq "workflow_dispatch") {
-            "value=${{ inputs.tag }}" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
-          } else {
-            $tag = "${{ github.ref_name }}"
-            "value=$tag" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
           }
 
       - name: Publish GitHub release assets
@@ -83,4 +113,7 @@ jobs:
             out/drywintun-amd64.dll
             out/drywintun-arm64.dll
             out/drywintun-x86.dll
+            out/wintun-*.zip
+            out/*.sys
+            out/UPSTREAM_SYS_STATUS.txt
             out/SHA256SUMS.txt

@@ -23,6 +23,9 @@ This repository mirrors official Wintun source and publishes reproducible releas
 - `drywintun-amd64.dll`
 - `drywintun-arm64.dll`
 - `drywintun-x86.dll`
+- `wintun-<upstream-version>.zip` (fetched from wintun.net)
+- `UPSTREAM_SYS_STATUS.txt`
+- `*.sys` files extracted from upstream package, when present
 - `SHA256SUMS.txt`
 
 ## Runner requirements
