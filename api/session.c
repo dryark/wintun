@@ -5,9 +5,8 @@
 
 #include "adapter.h"
 #include "logger.h"
-#include "main.h"
 #include "wintun.h"
-#include <Windows.h>
+#include "main.h"
 #include <devioctl.h>
 #include <stdlib.h>
 
